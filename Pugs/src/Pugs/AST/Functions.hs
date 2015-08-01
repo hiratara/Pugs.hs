@@ -40,7 +40,7 @@ writePadEntry x                 v = stm (writeTVar (pe_store x) v)
 
 retShift :: Val -> Eval a
 -- retShift = shiftT . const . return
-retShift = EvalT . return . RException
+retShift = evalT . return . RException
 
 catchT :: ((Val -> Eval b) -> Eval Val) -> Eval Val
 catchT action = tryT (action retShift)

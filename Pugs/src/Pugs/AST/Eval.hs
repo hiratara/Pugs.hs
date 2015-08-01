@@ -13,28 +13,24 @@ import {-# SOURCE #-} Pugs.AST.Internals
 
 {- Eval Monad -}
 
-newtype Eval a = EvalT { runEvalT :: ContT (EvalResult Val) (ReaderT Env SIO) (EvalResult a) }
-    deriving (Typeable)
+newtype Eval a = Eval (Env -> (a -> SIO Val) -> (Val -> SIO Val) -> SIO Val) deriving (Typeable)
 
-data EvalResult a
-    = RNormal    !a
-    | RException !Val
-    deriving (Typeable)
+evalT :: ContT (EvalResult Val) (ReaderT Env SIO) (EvalResult a) -> Eval a
+evalT m = Eval $ \env _ left -> do
+  let cont :: EvalResult a -> ReaderT Env SIO (EvalResult Val)
+      cont (RException exp) = lift $ fmap RException (left exp)
+  fmap unEvalResult $ runReaderT (runContT m cont) env
 
-instance ((:>:) (Eval a)) (SIO a) where cast = liftSIO
-
-liftResult :: EvalResult Val -> Val
-liftResult (RNormal x) = x
-liftResult (RException x) = x
+newtype EvalResult a = RException { unEvalResult :: Val } deriving (Typeable)
 
 runEvalSTM :: Env -> Eval Val -> STM Val
-runEvalSTM env = fmap liftResult . runSTM . (`runReaderT` enterAtomicEnv env) . (`runContT` return) . runEvalT
+runEvalSTM env (Eval f) = runSTM $ f (enterAtomicEnv env) return return
 
 runEvalIO :: Env -> Eval Val -> IO Val
-runEvalIO env = fmap liftResult . runIO . (`runReaderT` env) . (`runContT` return) . runEvalT
+runEvalIO env (Eval f) = runIO $ f env return return
 
 tryIO :: a -> IO a -> Eval a
-tryIO err = liftEval . io . (`catchIO` (\(e :: SomeException) -> return err))
+tryIO err = io . (`catchIO` (\(e :: SomeException) -> return err))
 
 {-|
 'shiftT' is like @callCC@, except that when you activate the continuation
@@ -53,7 +49,7 @@ shiftT :: ((a -> Eval Val) -> Eval Val)
        -- ^ Typically a lambda function of the form @\\esc -> do ...@, where
        --     @esc@ is the current (sub)continuation
        -> Eval a
-shiftT _ = fail "shiftT not yet implemented in Eval"
+shiftT = error "[BUG] shiftT" -- _ = fail "shiftT not yet implemented in Eval"
 
 {-|
 Create an scope that 'shiftT'\'s subcontinuations are guaranteed to eventually
@@ -98,62 +94,38 @@ nearest 'resetT'.
 -}
 resetT :: Eval Val -- ^ An evaluation, possibly containing a 'shiftT'
        -> Eval Val
-resetT (EvalT e) = EvalT (lift (e `runContT` return))
+resetT = error "[BUG] resetT" -- (EvalT e) = EvalT (lift (e `runContT` return))
 
 tryT :: Eval Val -- ^ An evaluation, possibly containing an exception
      -> Eval Val
+-- tryT e = catchError e return
 tryT e = catchError e return
 
 instance Monad Eval where
-    return a = EvalT $ return (RNormal a)
-    m >>= k = EvalT $ do
-        a <- runEvalT m
-        case a of
-            RNormal x   -> runEvalT (k x)
-            RException x-> return (RException x)
+    return a = Eval $ \_ r _ -> r a
+    (Eval m) >>= k = Eval $ \env r l -> do
+      let r' x = case k x of Eval m' -> m' env r l
+      m env r' l
     fail str = do
-        pos <- asks envPos'
-        EvalT $ return (RException (errStrPos (cast str) pos))
+      pos <- asks envPos'
+      Eval $ \env r l -> l (errStrPos (cast str) pos)
 
 instance Applicative Eval where
     pure  = return
     (<*>) = ap
 
-instance Error Val where
-    noMsg = errStr ""
-    strMsg = errStr
-
-liftEval :: ReaderT Env SIO a -> Eval a
-liftEval m = EvalT $ do
-    a <- ContT (m >>=)
-    return (RNormal a)
-
-{-
-instance MonadTrans EvalT where
-    lift m = EvalT $ do
-        a <- ContT (m >>=)
-        return (RNormal a)
--}
-
 instance Functor Eval where
-    fmap f m = EvalT $ do
-        a <- runEvalT m
-        return $ case a of
-            RNormal x   -> RNormal (f x)
-            RException x-> RException x
+    fmap = liftM
 
 instance MonadIO Eval where
-    liftIO = liftEval . io
+    liftIO = liftSIO . io
 
 instance MonadError Val Eval where
-    throwError err = do
-        pos <- asks envPos'
-        EvalT $ return (RException (errValPos err pos))
-    m `catchError` h = EvalT $ do
-        a <- runEvalT m
-        case a of
-            RException l    -> runEvalT (h l)
-            _               -> return a
+    throwError err = error "[BUG] throwError" -- do
+        -- pos <- asks envPos'
+        -- EvalT $ return (RException (errValPos err pos))
+    (Eval m) `catchError` h = Eval $ \env r l -> do
+      m env r (\x -> case h x of (Eval m') -> m' env r l)
 
 {-|
 Perform an IO action and raise an exception if it fails.
@@ -172,16 +144,16 @@ If t
 supress the exception and return an associated value instead.
 -}
 guardIOexcept :: MonadIO m => [((IOError -> Bool), a)] -> IO a -> m a
-guardIOexcept safetyNet x = do
-    rv <- io $ tryIOError x
-    case rv of
-        Right v -> return v
-        Left  e -> catcher e safetyNet
-    where
-    catcher e [] = fail (show e)
-    catcher e ((f, res):safetyNets)
-        | f e       = return res
-        | otherwise = catcher e safetyNets
+guardIOexcept = error "[BUG] guardIOexceptT" -- safetyNet x = do
+    -- rv <- io $ tryIOError x
+    -- case rv of
+    --     Right v -> return v
+    --     Left  e -> catcher e safetyNet
+    -- where
+    -- catcher e [] = fail (show e)
+    -- catcher e ((f, res):safetyNets)
+    --     | f e       = return res
+    --     | otherwise = catcher e safetyNets
 
 guardSTM :: STM a -> Eval a
 guardSTM x = do
@@ -191,22 +163,21 @@ guardSTM x = do
         Right v -> return v
     
 instance MonadSTM Eval where
-    liftSIO = EvalT . fmap RNormal . lift . lift
-    liftSTM x = do
+    liftSIO m = Eval $ \env n l -> m >>= n
+    liftSTM m = do
         atom <- asks envAtomic
         if atom
-            then EvalT (fmap RNormal . lift . lift . stm $ x)
-            else EvalT (fmap RNormal . lift . lift . io . stm $ x)
+            then Eval $ \env n l -> stm m >>= n
+            else Eval $ \env n l -> (io . stm) m >>= n
 
 instance MonadReader Env Eval where
-    ask       = liftEval ask
-    local f m = EvalT $ local f (runEvalT m)
+    ask = Eval $ \env right _ -> right env
+    local f (Eval m) = Eval $ \env right left -> m (f env) right left
 
 instance MonadCont Eval where
-    -- callCC :: ((a -> Eval b) -> Eval a) -> Eval a
-    callCC f = EvalT $
-        callCCT $ \c ->
-            runEvalT (f (\a -> EvalT $ c (RNormal a)))
+    callCC f = Eval $ \env right left ->
+      case f (\x -> Eval $ \env' right' left' -> right x) of
+        Eval ev -> ev env right left
 
 {-
 instance MonadEval Eval

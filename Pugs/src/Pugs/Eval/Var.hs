@@ -241,10 +241,10 @@ findSub _var _invs _args
                         let capt = mi_arguments (cast (methName, (invVV:posVVs), namVVs) :: Call)
                         rv' <- tryT . evalExp $ App (Var _var) Nothing [Syn "|" [Val (VV (mkVal capt))]]
                         case rv' of
-                            VError (VStr s') _ | "No compatible subroutine found" `isPrefixOf` s' -> EvalT $ return (RException rv)
-                            VError{} -> EvalT $ return (RException rv')
+                            VError (VStr s') _ | "No compatible subroutine found" `isPrefixOf` s' -> evalT $ return (RException rv)
+                            VError{} -> evalT $ return (RException rv')
                             _ -> return rv'
-                    VError{} -> EvalT $ return (RException rv)
+                    VError{} -> evalT $ return (RException rv)
                     _ -> return rv
             }
 
