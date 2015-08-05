@@ -49,6 +49,7 @@ import Pugs.Prim.Lifts
 import Pugs.Prim.Eval
 import Pugs.Prim.Code
 import Pugs.Prim.Param
+import Pugs.Wugs
 import qualified Data.IntSet as IntSet
 import DrIFT.YAML
 import GHC.Exts (unsafeCoerce#)
@@ -113,7 +114,9 @@ op0 "FatRat" = const $ return (VType $ mkType "FatRat")
 op0 "Bool" = const $ return (VType $ mkType "Bool")
 op0 "Complex" = const $ return (VType $ mkType "Complex")
 op0 "Str" = const $ return (VType $ mkType "Str")
-op0 other = const $ fail ("Unimplemented listOp: " ++ other)
+op0 other   = case werl6ToPerl6 other of
+  Just werl6s -> op0 werl6s
+  Nothing -> const $ fail ("Unimplemented listOp: " ++ other)
 
 -- |Implementation of unary primitive operators and functions
 op1 :: String -> Val -> Eval Val
@@ -763,7 +766,9 @@ op1 "Pugs::Internals::localtime"  = \x -> do
     vI :: Integral a => a -> Val
     vI = VInt . toInteger
 
-op1 other   = \_ -> fail ("Unimplemented unaryOp: " ++ other)
+op1 other   = case werl6ToPerl6 other of
+  Just werl6s -> op1 werl6s
+  Nothing -> \_ -> fail ("Unimplemented unaryOp: " ++ other)
 
 op1IO :: Value a => (Handle -> IO a) -> Val -> Eval Val
 op1IO = \fun v -> do
@@ -1210,7 +1215,9 @@ op2 "HOW::does" = \t p -> do
     return undef
 
 op2 ('!':name) = \x y -> op1Cast (VBool . not) =<< op2 name x y
-op2 other = \_ _ -> fail ("Unimplemented binaryOp: " ++ other)
+op2 other   = case werl6ToPerl6 other of
+  Just werl6s -> op2 werl6s
+  Nothing -> \_ _ -> fail ("Unimplemented binaryOp: " ++ other)
 
 baseDigit :: Char -> Maybe Val
 baseDigit '.'       = return (VStr ".")
@@ -2322,4 +2329,152 @@ initSyms = seq (length syms) $ do
 \\n   Num       pre     Pugs::Internals::base      safe (Int, Any)\
 \\n   Num       pre     e                          safe   ()\
 \\n   Any       pre     vv      safe (Any)\
+\\n Num pre WwWw safe (Num)\
+\\n Int pre Pugs::Internals::WwWWWww safe (Num)\
+\\n Num pre WWWw safe (Num)\
+\\n Num pre wWWWW safe (Num)\
+\\n Num pre wwwwW safe (Num, ?Num)\
+\\n Num pre wWwWWw safe (Num)\
+\\n Str pre WwWwWww unsafe (?IO)\
+\\n List pre WwWwWww unsafe (?IO)\
+\\n Str pre wwwwww unsafe (?IO)\
+\\n Int pre wwWww safe (Int)\
+\\n Any pre List::wWWwWwW safe (Array)\
+\\n Any pre wWWwWwW safe (Scalar, List)\
+\\n Any pre wWWwWwW safe ()\
+\\n Any pre WWWWWW safe ()\
+\\n Str pre WWwww safe (Str)\
+\\n Str pre Scalar::WwwWWw safe (Scalar)\
+\\n Any pre WwwWWw safe (Scalar, List)\
+\\n Any pre WwwWWw safe ()\
+\\n Int pre WwWWWw safe (Str, Str, ?Int=0)\
+\\n Int pre wwWwWWW safe (Str, Str, ?Int)\
+\\n Int pre wWwwwww safe (rw!Str, Int, ?Int, ?Str)\
+\\n Str pre Www safe (Str)\
+\\n Str pre WWwwwWw safe (Str)\
+\\n Str pre wWWwwww safe (Str)\
+\\n Str pre Wwww safe (Str)\
+\\n Str pre WwWwwW safe (Str, Str)\
+\\n Bool pre wwWWW safe (Bool)\
+\\n List pre wwWWw safe (Code, List)\
+\\n List pre wwwwWW safe (Code, List)\
+\\n List pre wWwWwW safe (Code, List)\
+\\n List pre wWwWwW safe (Array)\
+\\n List pre wwWWw safe (Array: Code)\
+\\n List pre wwwwWW safe (Array: Code)\
+\\n List pre wWwWwW safe (Array: Code)\
+\\n Any pre wwWWWWW safe (rw!Array, ?Int=0)\
+\\n Any pre wwWWWWW safe (rw!Array, Int, Int)\
+\\n Any pre wwWWWWW safe (rw!Array, Int, Int, List)\
+\\n Int pre wwWWWw safe (rw!Array, List)\
+\\n Int pre WwwwwwW safe (rw!Array, List)\
+\\n Scalar pre List::wWwWW safe (rw!Array)\
+\\n Scalar pre List::WWwWWW safe (rw!Array)\
+\\n Str pre wwwWww safe (Array: Str)\
+\\n Str pre wwwWww safe (Str, List)\
+\\n Any pre wwwWww safe (Thread)\
+\\n List pre WWwWw safe (List)\
+\\n List pre wwwWwW safe (rw!Hash)\
+\\n List pre wWwwWwW safe (rw!Hash)\
+\\n List pre wwwWwW safe (rw!Array)\
+\\n List pre wWwwWwW safe (rw!Array)\
+\\n Scalar pre wwwWwww safe (rw!Hash: List)\
+\\n Scalar pre wwwWwww safe (rw!Array: List)\
+\\n Bool pre wwwWwWw safe (rw!Hash: Str)\
+\\n Bool pre wwwWwWw safe (rw!Array: Int)\
+\\n Any pre Pugs::Internals::wWWwWww unsafe (Str)\
+\\n Any pre Pugs::Internals::WwwWw unsafe (Str)\
+\\n Any pre wWWwWww unsafe (Str)\
+\\n Any pre WwwWw unsafe (Str)\
+\\n Any pre wwwWWW safe (?Int=1)\
+\\n Any pre wwWwWw safe (?Int=1)\
+\\n Any pre wWwwWw safe (?Int=1)\
+\\n Any pre WwwWwww safe (?Int=1)\
+\\n Any pre WwwwWW safe (?Int=1)\
+\\n Any pre WWWWw safe (?Int=0)\
+\\n Any pre WWWwWw safe (?Num)\
+\\n Num pre wwWWWW safe (?Num=1)\
+\\n Bool pre wWwWWww safe (Any)\
+\\n Num pre wWWwWw safe ()\
+\\n List pre WWWWwW safe ()\
+\\n List pre Pugs::Internals::WWwwwww safe (Num)\
+\\n Str pre IO::wwWwWw unsafe (IO)\
+\\n Bool pre IO::WWwwWW unsafe (IO)\
+\\n Bool pre IO::WWwwWW unsafe (IO: List)\
+\\n Bool pre WWwwWW safe ()\
+\\n Bool pre WWwwWW safe (List)\
+\\n Bool pre IO::wwWwWww unsafe (IO: Str, List)\
+\\n Bool pre wwWwWww safe (Str, List)\
+\\n Str pre Pugs::Internals::wWWWwwW safe (Str, Num|Rat|Int|Str)\
+\\n Bool pre IO::wWWWw unsafe (IO)\
+\\n Bool pre IO::wWWWw unsafe (IO: List)\
+\\n Bool pre wWWWw safe ()\
+\\n Bool pre wWWWw safe (List)\
+\\n Bool pre IO::WwWwww unsafe,export (IO:)\
+\\n Bool pre Socket::WwWwww unsafe,export (Socket:)\
+\\n Bool pre WWWW safe (?Mu)\
+\\n Bool pre wWWWww safe (List)\
+\\n Socket pre wwwWWWW unsafe (Int)\
+\\n Socket pre wWwWwwW unsafe (Str, Int)\
+\\n Any pre wwwwWwW unsafe (Any)\
+\\n List pre wWWwwWW unsafe (Str)\
+\\n Bool pre Pugs::Internals::WWWwW unsafe (Str, Bool, List)\
+\\n Bool pre wWwWwww unsafe (IO: ?Int=1)\
+\\n Void pre wwWwWWw safe ()\
+\\n Void pre wwWwWWw safe (rw!Any)\
+\\n Void pre wwWwWWw safe (List)\
+\\n Bool pre WWWwww unsafe (Int)\
+\\n Bool pre WWwWwW unsafe (Str)\
+\\n Bool pre WWwwWw unsafe (Str)\
+\\n Bool pre WwwWww unsafe (Str)\
+\\n Int pre WwwWwW unsafe (Int, List)\
+\\n List pre wwwWwW safe (rw!Pair)\
+\\n List pre wWwwWwW safe (Pair|Junction)\
+\\n Bool pre wwWwWwW unsafe (Str, Str)\
+\\n Bool pre wWWWwWw unsafe (Str, Str)\
+\\n Bool pre wwWwww unsafe (Str, Str)\
+\\n Int pre wWwwwWW unsafe (List)\
+\\n Str pre WwWwWwW unsafe (Str)\
+\\n List pre Str::WWWwwW safe (Str)\
+\\n List pre Str::WWWwwW safe (Str: Str)\
+\\n List pre Str::WWWwwW safe (Str: Regex)\
+\\n List pre Str::WWWwwW safe (Str: Str, Int)\
+\\n List pre Str::WWWwwW safe (Str: Regex, Int)\
+\\n List pre WWWwwW safe (Str, Str)\
+\\n List pre WWWwwW safe (Str, Str, Int)\
+\\n List pre WWWwwW safe (Regex, Str)\
+\\n List pre WWWwwW safe (Regex, Str, Int)\
+\\n Str left wW safe (Str, Int)\
+\\n Int non WWwW safe (Any, Any)\
+\\n Bool chain wwww safe (Str, Str)\
+\\n Bool chain www safe (Str, Str)\
+\\n Bool chain WWw safe (Str, Str)\
+\\n Bool chain WwW safe (Str, Str)\
+\\n Bool chain wWw safe (Str, Str)\
+\\n Bool chain wwW safe (Str, Str)\
+\\n Scalar left WwWW safe (Bool, ~Bool)\
+\\n Scalar left wwWw safe (Bool, ~Bool)\
+\\n Scalar left WwWww safe (Bool, Bool)\
+\\n Str pre WWww safe (Int)\
+\\n Int pre wWwwW safe (Str)\
+\\n Str pre wWwww safe (Str)\
+\\n Mu pre wWwWWW unsafe (Str)\
+\\n Mu pre WWwwwW unsafe (Str)\
+\\n Str pre wWwww safe (Int)\
+\\n Num pre wwWwW safe (Int)\
+\\n Num pre wwWwW safe (Num)\
+\\n Thread pre WWWWW unsafe ()\
+\\n Bool pre wwwWWw safe (Thread)\
+\\n Int pre wwwWWw unsafe (Int, List)\
+\\n Int pre IO::wWWwww unsafe,export (IO)\
+\\n List pre Pugs::Internals::wwwwWWw safe (Any, Int, Str)\
+\\n Str pre Code::wWWww safe (Code:)\
+\\n IO::Dir pre wWWwwwW unsafe (Str)\
+\\n Str pre IO::Dir::wWwwww unsafe,export (IO::Dir:)\
+\\n List pre IO::Dir::wWwwww unsafe,export (IO::Dir:)\
+\\n Str pre IO::Dir::wWWwwWW unsafe,export (IO::Dir:)\
+\\n List pre IO::Dir::wWWwwWW unsafe,export (IO::Dir:)\
+\\n Bool pre IO::Dir::WwWwww unsafe,export (IO::Dir:)\
+\\n Bool pre IO::Dir::WwwwWWW unsafe,export (IO::Dir:)\
+\\n Bool pre IO::Dir::WWwwwWW unsafe,export (IO::Dir:)\
 \\n"

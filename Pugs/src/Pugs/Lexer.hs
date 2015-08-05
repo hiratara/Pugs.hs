@@ -31,6 +31,7 @@ import Pugs.Rule
 import Pugs.Types
 import Pugs.Parser.Types
 import Pugs.Parser.Charnames
+import Pugs.Wugs
 import Text.ParserCombinators.Parsec.Pos (sourceColumn, sourceLine)
 import qualified Text.ParserCombinators.Parsec as Parsec (eof)
 
@@ -205,7 +206,15 @@ ruleEndOfLine = choice [ do { char '\n'; return () }, eof ]
 -}
 
 symbol :: String -> RuleParser String
-symbol s = try $ do
+symbol s = case perl6ToWerl6 s of
+  Nothing -> symbol' s
+  Just w -> do ret <- symbol' s <|> symbol' w
+               return $ case werl6ToPerl6 ret of
+                 Nothing -> ret
+                 Just p -> p
+
+symbol' :: String -> RuleParser String
+symbol' s = try $ do
     rv <- string s
     let lastCh  = last s
         ahead f = lookAhead (satisfy (f lastCh)) <|> (eof >> return ' ')
