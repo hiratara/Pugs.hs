@@ -80,7 +80,7 @@ my @cc_options = map { /^-optc(.+)/ ? $1 : () } (split(/\s+/, $embed_flags), spl
 my @ld_options = grep { not /,/ } map { /^-optl(.+)/ ? $1 : () } (split(/\s+/, $embed_flags), split(/\s+/, $ccdlflags));
 
 my $info = << ".";
-executable: pugs
+executable: wugs
 ghc-options: $embed_flags $ccdlflags
 include-dirs: @include_dirs
 cc-options: @cc_options
@@ -93,7 +93,7 @@ $info =~ s/-arch i386 (-arch x86_64)(?: -arch ppc)?/$1/g;
 $info =~ s/(-opt[lc]-arch -opt[lc]x86_64) -opt[lc]-arch -opt[lc]i386(?: -opt[lc]-arch -opt[lc]ppc)?/$1/g;
 $info =~ s/-opt[lc]-arch -opt[lc]i386 (-opt[lc]-arch -opt[lc]x86_64)(?: -opt[lc]-arch -opt[lc]ppc)?/$1/g;
 
-open INFO, ">Pugs.buildinfo" or die "Cannot write build info: $!";
+open INFO, ">Wugs.buildinfo" or die "Cannot write build info: $!";
 print INFO $info;
 close INFO;
 

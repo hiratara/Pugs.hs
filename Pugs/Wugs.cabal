@@ -1,4 +1,4 @@
-Name            : Pugs
+Name            : Wugs
 Version         : 6.2.13.20150815
 license         : BSD3
 license-file    : LICENSE
@@ -9,8 +9,8 @@ category        : Language, Pugs
 stability       : experimental
 build-type      : Custom
 homepage        : http://pugscode.org/
-synopsis        : A Perl 6 Implementation
-description     : A Perl 6 Implementation
+synopsis        : A Werl 6 Implementation
+description     : A Werl 6 Implementation
 author          : Audrey Tang <audreyt@audreyt.org>
 Tested-With:    GHC==6.8.2, GHC==6.8.3, GHC==6.10.1, GHC==6.12.1, GHC==7.0.1, GHC==7.2.1, GHC==7.4.1, GHC==7.10.2
 data-files      :
@@ -156,7 +156,7 @@ flag Perl5
     description: Enable Perl 5 Embedding
     default:     True
 
-executable pugs
+executable wugs
     main-is:            Main.hs
     hs-source-dirs:     src
     extra-lib-dirs:     /usr/lib /opt/local/lib

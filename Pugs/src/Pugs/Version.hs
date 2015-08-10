@@ -29,11 +29,11 @@ module Pugs.Version (
 
 name, versnum, date, version, copyright, revnum, revision :: String
 
-name       = "Perl6 User's Golfing System"
+name       = "Werl6 User's Golfing System"
 versnum    = PUGS_VERSION
 date       = PUGS_DATE
 version    = name ++ ", version " ++ versnum ++ ", " ++ date ++ revision
-copyright  = "Copyright 2005-2015, The Pugs Contributors"
+copyright  = "Copyright 2005-2015, The Wugs Contributors"
 revnum     = show (PUGS_SVN_REVISION :: Integer)
 revision
     | rev <- revnum

@@ -25,7 +25,7 @@ printInteractiveHelp
         , ":h              = show this help message"
         , ":q              = quit"
         , ":r              = reset the evaluation environment"
-        , ":l <filename>   = load a pugs file"
+        , ":l <filename>   = load a wugs file"
         , ":d <exp>        = show syntax tree of an expression"
         , ":D <exp>        = show raw syntax tree of an expression"
         , ":e <exp>        = run a command, and ugly-print the result"
@@ -39,7 +39,7 @@ printInteractiveHelp
 printCommandLineHelp :: IO ()
 printCommandLineHelp
    = putStrLn $ unlines
-        [ "Usage: pugs [switches] [programfile] [arguments]"
+        [ "Usage: wugs [switches] [programfile] [arguments]"
         , "Command-line flags:"
         , "-e program       one line of program (several -e's allowed, omit programfile)"
         , "-n               wrap the -e fragments in a 'while(=<>){...}' loop"
@@ -70,21 +70,18 @@ versionFill n = fill ++ vstr
 
 banner :: IO ()
 banner = putStrLn $ unlines
-    [ "   ______                                                           "
-    , " /\\   __ \\                                                        "
-    , " \\ \\  \\/\\ \\ __  __  ______  ______     (P)erl 6                "
-    , "  \\ \\   __//\\ \\/\\ \\/\\  __ \\/\\  ___\\    (U)ser's           "
-    , "   \\ \\  \\/ \\ \\ \\_\\ \\ \\ \\/\\ \\ \\___  \\   (G)olfing      "
-    , "    \\ \\__\\  \\ \\____/\\ \\____ \\/\\_____\\  (S)ystem           "
-    , "     \\/__/   \\/___/  \\/___/\\ \\/____/                           "
-    , "                       /\\____/   " ++ versionFill 27
-    , "                       \\/___/    " ++ copyright
+    [ " __      __                         (W)erl 6 "
+    , "/  \\    /  \\__ __  ____  ______     (U)ser's "
+    , "\\   \\/\\/   /  |  \\/ ___\\/  ___/     (G)olfing"
+    , " \\        /|  |  / /_/  >___ \\      (S)ystem "
+    , "  \\__/\\  / |____/\\___  /____  >  " ++ versionFill 27
+    , "       \\/       /_____/     \\/   " ++ copyright
     , "--------------------------------------------------------------------"
-    , " Web: http://pugscode.org/           Email: perl6-compiler@perl.org "
+    , " Web: http://hiratara.github.io/          Email: hira.tara@gmail.com"
     ]
 
 intro :: IO ()
 intro = putStrLn $ unlines
-    [ "Welcome to Pugs -- " ++ name
+    [ "Welcome to Wugs -- " ++ name
     , "Type :h for help."
     ]

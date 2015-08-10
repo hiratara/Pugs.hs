@@ -45,7 +45,7 @@ type Input = InputT IO
 -- parse the input and return the corresponding command
 getCommand :: Input Command
 getCommand = do
-    input <- fmap (fmap encodeUTF8) $ getInputLine "pugs> " 
+    input <- fmap (fmap encodeUTF8) $ getInputLine "wugs> " 
     doCommand input
 
 doCommand :: Maybe String -> Input Command
@@ -80,7 +80,7 @@ readline prompt = (`runInputT` fmap (fmap encodeUTF8) (getInputLine prompt)) =<<
 pugsSettings :: IO (Settings IO)
 pugsSettings = do
     home <- getHomeDirectory
-    return $ defaultSettings { historyFile = Just (home </> ".pugs_history") }
+    return $ defaultSettings { historyFile = Just (home </> ".wugs_history") }
 
 addHistory :: String -> IO ()
 addHistory str = return () -- Readline.addHistory str

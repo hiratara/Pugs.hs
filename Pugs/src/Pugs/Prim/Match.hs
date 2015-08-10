@@ -10,7 +10,7 @@ import Pugs.AST
 import Pugs.Types
 import Pugs.Config
 import Pugs.Prim.Code
-import Paths_Pugs
+import Paths_Wugs
 import Control.Exception (SomeException)
 import qualified Data.Map as Map
 import qualified Data.Array as Array
